@@ -7,7 +7,7 @@
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent  : public juce::AudioAppComponent, juce::ChangeListener//, juce::Slider::Listener
+class MainComponent  : public juce::AudioAppComponent, juce::ChangeListener, juce::Slider::Listener
 
 {
     enum TransportState
@@ -56,14 +56,18 @@ public:
     void granKnob();
 
    
-   /* void sliderValueChanged(juce::Slider* slider) override
+    void sliderValueChanged(juce::Slider* slider) override
     {
         if (slider == &granSlider)
         {
-            minGranTime++;
+            granTime = granSlider.getValue();
+        }
+        if (slider == &startSlider)
+        {
+            startPosition = startSlider.getValue();
         }
     }
-    */
+    
    
     void releaseResources() override
     {
@@ -98,12 +102,16 @@ private:
     juce::TextButton stopButton;
 
     juce::Slider granSlider;
+    juce::Slider startSlider;
 
     double totalDuration;
     float startPosition = 40.0;
     double minGranTime = 0.02;
     double maxGranTime = 3.0;
     double granTime = 0.02;
+    double fileDuration = 0.f;
+
+
     //==============================================================================
     // Your private member variables go here...
 

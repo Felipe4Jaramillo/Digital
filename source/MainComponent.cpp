@@ -39,11 +39,11 @@ MainComponent::MainComponent() : state(Stopped)
 
     addAndMakeVisible(&granSlider);
 
-    granSlider.onValueChange = [this] {granKnob(); };
+    //granSlider.onValueChange = [this] {granKnob(); };
 
     granSlider.setRange(minGranTime, maxGranTime);
 
-    //granSlider.addListener(this);
+    granSlider.addListener(this);
 
     granSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
     granSlider.setColour(juce::Slider::ColourIds::rotarySliderFillColourId, juce::Colours::black);
@@ -156,7 +156,10 @@ void MainComponent::openButtonClick()
                     playButton.setEnabled(true);
                     //Este setPosition determina la posición inicial
                     transportSource.setPosition(startPosition);
-                    readerSource.reset(newSource.release());                                          
+                    readerSource.reset(newSource.release());
+                    fileDuration = transportSource.getLengthInSeconds();
+                    startSlider.setRange(0.0, fileDuration);
+                    startSlider.repaint();
                 }
             }
     });
@@ -184,7 +187,6 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
-
 
     //Si el archivo no es valido vamos a pasar silencio
     if (readerSource.get() == nullptr)
