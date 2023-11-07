@@ -1,6 +1,8 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include<random>
+
 
 //==============================================================================
 /*
@@ -104,12 +106,27 @@ private:
     juce::Slider granSlider;
     juce::Slider startSlider;
 
+    juce::AudioSourceChannelInfo firstBuffer
+    {
+        juce::AudioBuffer<float>(numChannels, numSamples)
+    };
+
+    juce::AudioSourceChannelInfo secondBuffer
+    {
+        juce::AudioBuffer<float>(numChannels, numSamples)
+    };
+
     double totalDuration;
-    float startPosition = 40.0;
+    float startPosition = 0.0;
     double minGranTime = 0.02;
-    double maxGranTime = 3.0;
+    double maxGranTime = 0.1;
     double granTime = 0.02;
     double fileDuration = 0.f;
+
+    int numChannels = 2;
+    int numSamples = 0;
+
+    float tail = 0.5f;
 
 
     //==============================================================================

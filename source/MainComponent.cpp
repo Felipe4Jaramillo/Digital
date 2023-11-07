@@ -53,6 +53,23 @@ MainComponent::MainComponent() : state(Stopped)
 
     granSlider.setEnabled(false);
 
+
+     addAndMakeVisible(&startSlider);
+
+    //granSlider.onValueChange = [this] {granKnob(); };
+
+
+    startSlider.addListener(this);
+
+    startSlider.setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
+    startSlider.setColour(juce::Slider::ColourIds::rotarySliderFillColourId, juce::Colours::black);
+    startSlider.setColour(juce::Slider::ColourIds::rotarySliderOutlineColourId, juce::Colours::white);
+
+    
+    startSlider.isVertical();
+
+    startSlider.setEnabled(false);
+
     //Que formatos vamos a reproducir
     formatManager.registerBasicFormats();
 
@@ -98,17 +115,23 @@ void MainComponent::changeState(TransportState newState)
         case Stopped:
             stopButton.setEnabled(false);
             playButton.setEnabled(true);
+            startSlider.setEnabled(true);
+            startPosition = (float)rand() / RAND_MAX * fileDuration - tail;
+
             //Este setPosition determina donde queda luego de haber parado
-            transportSource.setPosition(startPosition);
+            //ransportSource.setPosition(startPosition);
             break;
 
         case Starting:         
             playButton.setEnabled(false);
             granSlider.setEnabled(true);
+            startSlider.setEnabled(false);
+
             transportSource.start();
             break;
 
         case Playing:
+            transportSource.setPosition(startPosition);
             stopButton.setEnabled(true);
             break;
 
@@ -154,12 +177,14 @@ void MainComponent::openButtonClick()
                    
                     transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);       
                     playButton.setEnabled(true);
+                    startSlider.setEnabled(true);
                     //Este setPosition determina la posición inicial
                     transportSource.setPosition(startPosition);
                     readerSource.reset(newSource.release());
                     fileDuration = transportSource.getLengthInSeconds();
-                    startSlider.setRange(0.0, fileDuration);
-                    startSlider.repaint();
+                    startPosition = (float)rand() / RAND_MAX * fileDuration - tail;
+                   // startSlider.setRange(0.0, fileDuration);
+                   // startSlider.repaint();
                 }
             }
     });
@@ -182,6 +207,7 @@ void MainComponent::granKnob()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
+    numSamples = samplesPerBlockExpected;
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
 }
 
@@ -202,7 +228,17 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     }
 
     //de lo contrario vamos a meter el trasporSource (archivo wav) en el buffer
-    transportSource.getNextAudioBlock(bufferToFill);
+    transportSource.getNextAudioBlock(firstBuffer);
+
+    for(int samp = 0; samp < bufferToFill.buffer->getNumSamples(); samp++)
+    {
+        for (int chan = 0; chan < bufferToFill.buffer->getNumChannels(); chan++)
+        {
+            bufferToFill.buffer->addSample(chan, samp, firstBuffer.buffer->getSample(chan, samp) + secondBuffer.buffer->getSample(chan, samp));
+        }
+    }
+
+
 }
 
 
@@ -217,9 +253,10 @@ void MainComponent::paint (juce::Graphics& g)
 
 void MainComponent::resized()
 {
-    openButton.setBounds(20, 20, getWidth() - 50, getHeight() / 4);
-    playButton.setBounds(20, openButton.getBottom(), getWidth() - 50, getHeight() / 4);
-    stopButton.setBounds(20, playButton.getBottom(), getWidth() - 50, getHeight() / 4);
+    openButton.setBounds(20, 20, getWidth() - 50, getHeight() / 6);
+    playButton.setBounds(20, openButton.getBottom(), getWidth() - 50, getHeight() / 6);
+    stopButton.setBounds(20, playButton.getBottom(), getWidth() - 50, getHeight() / 6);
 
-    granSlider.setBounds(20, stopButton.getBottom(), getWidth() - 50, getHeight() / 6);
+    granSlider.setBounds(20, stopButton.getBottom(), getWidth() - 50, getHeight() / 8);
+    //startSlider.setBounds(-80, granSlider.getBottom(), getWidth() - 50, getHeight() / 6);
 }
