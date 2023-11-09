@@ -4,6 +4,8 @@
               addUsingNamespaceToJuceHeader="0" displaySplashScreen="1" jucerFormatVersion="1">
   <MAINGROUP id="RZ9R4Q" name="Audio Player">
     <GROUP id="{46996E3D-6A9F-8E29-E332-06E8C1BB778C}" name="Source">
+      <FILE id="n7ebig" name="Granulo.cpp" compile="1" resource="0" file="Source/Granulo.cpp"/>
+      <FILE id="rr7yK6" name="Granulo.h" compile="0" resource="0" file="Source/Granulo.h"/>
       <FILE id="PFI6HH" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
       <FILE id="m8V3Bh" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="I359PU" name="MainComponent.cpp" compile="1" resource="0"
