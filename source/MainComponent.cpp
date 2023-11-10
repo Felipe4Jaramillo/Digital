@@ -3,6 +3,10 @@
 //==============================================================================
 MainComponent::MainComponent() : state(Stopped)
 {
+    firstBuffer.setSize(2, 1024, false);
+    secondBuffer.setSize(2, 1024, false);
+
+
     //Metodo de juce para hacer visible un componenete
     addAndMakeVisible(&openButton); //el & indica a un objeto o variable especifica
     //Texto del boton
@@ -13,6 +17,10 @@ MainComponent::MainComponent() : state(Stopped)
     //Sintaxis
     //[Donde esta la funcion] {la funcion]
     openButton.onClick = [this] {openButtonClick(); };
+
+    addAndMakeVisible(&openButtonTwo);
+    openButtonTwo.setButtonText("open...");
+    openButtonTwo.onClick = [this] {openButtonClickTwo(); };
 
     //Metodo de juce para hacer visible un componenete
     addAndMakeVisible(&playButton); //el & indica a un objeto o variable especifica
@@ -117,6 +125,7 @@ void MainComponent::changeState(TransportState newState)
             playButton.setEnabled(true);
             startSlider.setEnabled(true);
             startPosition = (float)rand() / RAND_MAX * fileDuration - tail;
+            startPositionTwo = (float)rand() / RAND_MAX * fileDuration - tail;
 
             //Este setPosition determina donde queda luego de haber parado
             //ransportSource.setPosition(startPosition);
@@ -128,15 +137,18 @@ void MainComponent::changeState(TransportState newState)
             startSlider.setEnabled(false);
 
             transportSource.start();
+            transportSourceTwo.start();
             break;
 
         case Playing:
             transportSource.setPosition(startPosition);
+            transportSourceTwo.setPosition(startPositionTwo);
             stopButton.setEnabled(true);
             break;
 
         case Stopping:
             transportSource.stop();
+            transportSourceTwo.stop();
             granSlider.setEnabled(false);
             break;
         }
@@ -190,6 +202,53 @@ void MainComponent::openButtonClick()
     });
 }
 
+void MainComponent::openButtonClickTwo()
+{
+    //Abrir ventana para seleccionar archivo
+    //Buscar un archivo wav
+    //Cargar el archivo wav
+
+    //En la ventana de busqueda solo aparecen archivos wav
+    chooserTwo = std::make_unique<juce::FileChooser>("Seleccione un archivo wav", juce::File{}, "*.wav");
+
+    auto chooserFlags2 = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+
+    //Se escogio el archivo
+    chooserTwo->launchAsync(chooserFlags2, [this](const juce::FileChooser& fc2)
+        {
+
+            //Crear un objeto interno de juce para el archivo
+            auto file2 = fc2.getResult();
+
+            //Si ese objeto no es tipo file
+            if (file2 != juce::File{})
+            {
+                //VAmos a acomodarlo para JUCE
+                auto* reader2 = formatManagerTwo.createReaderFor(file2);
+
+                //Si no existe un archivo, entonces el nuevo archivo va a reproduccion
+                if (reader2 != nullptr)
+                {
+                    //Enviamos el archivo a reproduccion en transportSource
+                    auto newSource2 = std::make_unique<juce::AudioFormatReaderSource>(reader2, true);
+                    newSource2->setLooping(true);
+
+                    transportSourceTwo.setSource(newSource2.get(), 0, nullptr, reader2->sampleRate);
+                    //playButton.setEnabled(true);
+                    //startSlider.setEnabled(true);
+                    //Este setPosition determina la posición inicial
+                    transportSourceTwo.setPosition(startPositionTwo);
+                    readerSourceTwo.reset(newSource2.release());
+                    fileDurationTwo = transportSourceTwo.getLengthInSeconds();
+                    startPositionTwo = (float)rand() / RAND_MAX * fileDuration - tail;
+                    // startSlider.setRange(0.0, fileDuration);
+                    // startSlider.repaint();
+                }
+            }
+        });
+}
+
 void MainComponent::playButtonClick()
 {
     changeState(Starting);
@@ -208,7 +267,12 @@ void MainComponent::granKnob()
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
     numSamples = samplesPerBlockExpected;
+
+    firstBuffer.setSize(2, numSamples);
+    secondBuffer.setSize(2, numSamples);
+
     transportSource.prepareToPlay(samplesPerBlockExpected, sampleRate);
+    transportSourceTwo.prepareToPlay(samplesPerBlockExpected, sampleRate);
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -227,14 +291,20 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         transportSource.setPosition(startPosition);
     }
 
+    if (transportSourceTwo.getCurrentPosition() > (startPositionTwo + granTime))
+    {
+        transportSourceTwo.setPosition(startPositionTwo);
+    }
+
     //de lo contrario vamos a meter el trasporSource (archivo wav) en el buffer
-    transportSource.getNextAudioBlock(firstBuffer);
+    transportSource.getNextAudioBlock(chanInfo1);
+    transportSourceTwo.getNextAudioBlock(chanInfo2);
 
     for(int samp = 0; samp < bufferToFill.buffer->getNumSamples(); samp++)
     {
         for (int chan = 0; chan < bufferToFill.buffer->getNumChannels(); chan++)
         {
-            bufferToFill.buffer->addSample(chan, samp, firstBuffer.buffer->getSample(chan, samp) + secondBuffer.buffer->getSample(chan, samp));
+            bufferToFill.buffer->addSample(chan, samp, firstBuffer.getSample(chan, samp) + secondBuffer.getSample(chan, samp));
         }
     }
 
@@ -254,7 +324,8 @@ void MainComponent::paint (juce::Graphics& g)
 void MainComponent::resized()
 {
     openButton.setBounds(20, 20, getWidth() - 50, getHeight() / 6);
-    playButton.setBounds(20, openButton.getBottom(), getWidth() - 50, getHeight() / 6);
+    openButtonTwo.setBounds(20, openButton.getBottom(), getWidth() - 50, getHeight() / 6);
+    playButton.setBounds(20, openButtonTwo.getBottom(), getWidth() - 50, getHeight() / 6);
     stopButton.setBounds(20, playButton.getBottom(), getWidth() - 50, getHeight() / 6);
 
     granSlider.setBounds(20, stopButton.getBottom(), getWidth() - 50, getHeight() / 8);

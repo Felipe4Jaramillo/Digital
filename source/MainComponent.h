@@ -49,9 +49,22 @@ public:
                 changeState(Stopped);
             }
         }
+
+        if (source == &transportSourceTwo)
+        {
+            if (transportSourceTwo.isPlaying())
+            {
+                changeState(Playing);
+            }
+            else
+            {
+                changeState(Stopped);
+            }
+        }
     }
 
     void openButtonClick();
+    void openButtonClickTwo();
     void playButtonClick();
     void stopButtonClick();
 
@@ -74,19 +87,23 @@ public:
     void releaseResources() override
     {
         transportSource.releaseResources();
+        transportSourceTwo.releaseResources();
     }
 
     void changeState(TransportState newState);
 
     juce::AudioFormatManager formatManager;
+    juce::AudioFormatManager formatManagerTwo;
 
     //Pointer: direccion en memoria
     //unique_ptr: direccion en memoria que se administra sola
     //AudioFormatReaderSource objeto que lee archivo de audio
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
+    std::unique_ptr<juce::AudioFormatReaderSource> readerSourceTwo;
 
     //Identifica la ubicacion de reproduccion
     juce::AudioTransportSource transportSource;
+    juce::AudioTransportSource transportSourceTwo;
 
 
 
@@ -95,9 +112,11 @@ private:
     TransportState state;
 
     std::unique_ptr<juce::FileChooser> chooser;
+    std::unique_ptr<juce::FileChooser> chooserTwo;
 
     //Boton para abrir el archivo de audio
     juce::TextButton openButton;
+    juce::TextButton openButtonTwo;
     //boton de paly
     juce::TextButton playButton;
     //boton de stop
@@ -106,22 +125,30 @@ private:
     juce::Slider granSlider;
     juce::Slider startSlider;
 
-    juce::AudioSourceChannelInfo firstBuffer
-    {
-        juce::AudioBuffer<float>(numChannels, numSamples)
-    };
+    //juce::AudioSourceChannelInfo firstBuffer
+    //{
+    //    juce::AudioBuffer<float>(2, 1024)
+    //};
 
-    juce::AudioSourceChannelInfo secondBuffer
-    {
-        juce::AudioBuffer<float>(numChannels, numSamples)
-    };
+    //juce::AudioSourceChannelInfo secondBuffer
+    //{
+    //    juce::AudioBuffer<float>(2, 1024)
+    //};
+
+    juce::AudioBuffer<float> firstBuffer;
+    juce::AudioBuffer<float> secondBuffer;
+
+    juce::AudioSourceChannelInfo chanInfo1{ firstBuffer };
+    juce::AudioSourceChannelInfo chanInfo2{ secondBuffer };
 
     double totalDuration;
     float startPosition = 0.0;
+    float startPositionTwo = 0.0;
     double minGranTime = 0.02;
     double maxGranTime = 0.1;
     double granTime = 0.02;
     double fileDuration = 0.f;
+    double fileDurationTwo = 0.f;
 
     int numChannels = 2;
     int numSamples = 0;
