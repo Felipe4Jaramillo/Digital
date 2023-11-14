@@ -127,6 +127,7 @@ void MainComponent::changeState(TransportState newState)
             startPosition = (float)rand() / RAND_MAX * fileDuration - tail;
             startPositionTwo = (float)rand() / RAND_MAX * fileDuration - tail;
 
+
             //Este setPosition determina donde queda luego de haber parado
             //ransportSource.setPosition(startPosition);
             break;
@@ -169,6 +170,7 @@ void MainComponent::openButtonClick()
 
     //Se escogio el archivo
     chooser->launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+
     {
 
             //Crear un objeto interno de juce para el archivo
@@ -178,16 +180,23 @@ void MainComponent::openButtonClick()
             if (file != juce::File{})                                                
             {
                 //VAmos a acomodarlo para JUCE
-                auto* reader = formatManager.createReaderFor(file);                 
+                auto* reader = formatManager.createReaderFor(file);  
+                auto reader2 = formatManager.createReaderFor(file);
 
                 //Si no existe un archivo, entonces el nuevo archivo va a reproduccion
-                if (reader != nullptr)
+                if (reader != nullptr && reader2 != nullptr)
                 {
                     //Enviamos el archivo a reproduccion en transportSource
                     auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-                    newSource -> setLooping(true);                                        
+              
+                    newSource -> setLooping(true);     
+                    auto newSource2 = std::make_unique<juce::AudioFormatReaderSource>(reader2, true);
+                    newSource2->setLooping(true);
                    
-                    transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);       
+                    mixer.addInputSource(newSource.get(), false);
+                    mixer.addInputSource(newSource2.get(), false);
+
+                    transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
                     playButton.setEnabled(true);
                     startSlider.setEnabled(true);
                     //Este setPosition determina la posición inicial
@@ -197,6 +206,12 @@ void MainComponent::openButtonClick()
                     startPosition = (float)rand() / RAND_MAX * fileDuration - tail;
                    // startSlider.setRange(0.0, fileDuration);
                    // startSlider.repaint();
+
+                   
+                    //transportSourceTwo.setPosition(startPositionTwo);
+                    readerSourceTwo.reset(newSource2.release());
+                    fileDurationTwo = transportSourceTwo.getLengthInSeconds();
+                    startPositionTwo = (float)rand() / RAND_MAX * fileDurationTwo - tail;
                 }
             }
     });
@@ -209,13 +224,13 @@ void MainComponent::openButtonClickTwo()
     //Cargar el archivo wav
 
     //En la ventana de busqueda solo aparecen archivos wav
-    chooserTwo = std::make_unique<juce::FileChooser>("Seleccione un archivo wav", juce::File{}, "*.wav");
+    chooser = std::make_unique<juce::FileChooser>("Seleccione un archivo wav", juce::File{}, "*.wav");
 
     auto chooserFlags2 = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
 
     //Se escogio el archivo
-    chooserTwo->launchAsync(chooserFlags2, [this](const juce::FileChooser& fc2)
+    chooser->launchAsync(chooserFlags2, [this](const juce::FileChooser& fc2)
         {
 
             //Crear un objeto interno de juce para el archivo
@@ -225,7 +240,7 @@ void MainComponent::openButtonClickTwo()
             if (file2 != juce::File{})
             {
                 //VAmos a acomodarlo para JUCE
-                auto* reader2 = formatManagerTwo.createReaderFor(file2);
+                auto* reader2 = formatManager.createReaderFor(file2);
 
                 //Si no existe un archivo, entonces el nuevo archivo va a reproduccion
                 if (reader2 != nullptr)
@@ -234,14 +249,16 @@ void MainComponent::openButtonClickTwo()
                     auto newSource2 = std::make_unique<juce::AudioFormatReaderSource>(reader2, true);
                     newSource2->setLooping(true);
 
-                    transportSourceTwo.setSource(newSource2.get(), 0, nullptr, reader2->sampleRate);
+                    mixer.addInputSource(newSource2.get(), false);
+
+                   // transportSourceTwo.setSource(newSource2.get(), 0, nullptr, reader2->sampleRate);
                     //playButton.setEnabled(true);
                     //startSlider.setEnabled(true);
                     //Este setPosition determina la posición inicial
                     transportSourceTwo.setPosition(startPositionTwo);
                     readerSourceTwo.reset(newSource2.release());
                     fileDurationTwo = transportSourceTwo.getLengthInSeconds();
-                    startPositionTwo = (float)rand() / RAND_MAX * fileDuration - tail;
+                    startPositionTwo = (float)rand() / RAND_MAX * fileDurationTwo - tail;
                     // startSlider.setRange(0.0, fileDuration);
                     // startSlider.repaint();
                 }
@@ -277,6 +294,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
 {
+    chanInfo2.buffer->clear();
 
     //Si el archivo no es valido vamos a pasar silencio
     if (readerSource.get() == nullptr)
@@ -297,14 +315,16 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     }
 
     //de lo contrario vamos a meter el trasporSource (archivo wav) en el buffer
-    transportSource.getNextAudioBlock(chanInfo1);
+    transportSource.getNextAudioBlock(bufferToFill);
     transportSourceTwo.getNextAudioBlock(chanInfo2);
 
     for(int samp = 0; samp < bufferToFill.buffer->getNumSamples(); samp++)
     {
+
         for (int chan = 0; chan < bufferToFill.buffer->getNumChannels(); chan++)
         {
-            bufferToFill.buffer->addSample(chan, samp, firstBuffer.getSample(chan, samp) + secondBuffer.getSample(chan, samp));
+            DBG(chanInfo2.buffer->getSample(chan, samp));
+            //bufferToFill.buffer->addSample(chan, samp, chanInfo2.buffer->getSample(chan, samp));
         }
     }
 

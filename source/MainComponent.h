@@ -12,6 +12,7 @@
 class MainComponent  : public juce::AudioAppComponent, juce::ChangeListener, juce::Slider::Listener
 
 {
+
     enum TransportState
     {
         Stopped,
@@ -100,6 +101,9 @@ public:
     //AudioFormatReaderSource objeto que lee archivo de audio
     std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
     std::unique_ptr<juce::AudioFormatReaderSource> readerSourceTwo;
+    
+    std::unique_ptr<juce::AudioFormatReaderSource> newSource;
+    std::unique_ptr<juce::AudioFormatReaderSource> newSource2;
 
     //Identifica la ubicacion de reproduccion
     juce::AudioTransportSource transportSource;
@@ -113,6 +117,8 @@ private:
 
     std::unique_ptr<juce::FileChooser> chooser;
     std::unique_ptr<juce::FileChooser> chooserTwo;
+
+    juce::MixerAudioSource mixer;
 
     //Boton para abrir el archivo de audio
     juce::TextButton openButton;
@@ -140,6 +146,8 @@ private:
 
     juce::AudioSourceChannelInfo chanInfo1{ firstBuffer };
     juce::AudioSourceChannelInfo chanInfo2{ secondBuffer };
+
+    //MixerAudioSource mixer;
 
     double totalDuration;
     float startPosition = 0.0;
